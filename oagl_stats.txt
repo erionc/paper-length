@@ -1,0 +1,5 @@
+title            mean: 11.96     std: 4.49
+abstract         mean: 144.88    std: 74.98
+keywords         mean: 6.74      std: 5.49
+page             mean: 6.66      std: 4.88
+year             mean: 2005.54   std: 9.50
