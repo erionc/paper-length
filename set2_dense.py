@@ -1,28 +1,25 @@
 
 '''
-Experiments with keywords + title + abstract  metadata concatenated. The 
+Experiments with keywords + title + abstract metadata concatenated. The 
 regressor is a neural network with a static layer of 300d word embeddings 
-from Glove and Word2Vec and a dense layer of 100 neurons. 
+from Glove and Word2Vec (you chose for each run) and a dense layer of 
+100 neurons. 
 '''
 
 import pandas as pd
 import numpy as np
 from numpy import array, asarray, zeros
 from ast import literal_eval
-
 import os, sys, argparse, json, re, random, pickle
 from nltk import word_tokenize, sent_tokenize
 from nltk.tokenize.treebank import TreebankWordTokenizer
+from tqdm import *
 
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer, CountVectorizer, HashingVectorizer
 from sklearn import linear_model
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.naive_bayes import GaussianNB
 from gensim.models import doc2vec
-# from collections import namedtuple
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, accuracy_score
 from gensim.models import KeyedVectors
-
 from sklearn.neural_network import MLPRegressor
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
@@ -169,20 +166,28 @@ def text_to_wordlist(text, remove_stopwords=False, stem_words=False):
 	# Return a list of words
 	return(text)
 
-# EMB_DIR = './embed/'
-EMB_DIR = '/mnt/c/buffer/temp/'
-EMB_FILE = 'glove.6B.300d.txt' 
-# EMB_FILE = 'glove.840B.300d.txt'
-# EMB_FILE = 'GoogleNews-vectors-negative300.txt'
-# word2vec = KeyedVectors.load_word2vec_format(os.path.join(EMB_DIR, EMB_FILE), binary=False)
+parser = argparse.ArgumentParser()
+parser.add_argument('-e', '--embeddings', choices=['gs', 'gb', 'w2v'], help='Embedding type', required=True)
+args = parser.parse_args()
 
-## converting GoogleNews embeddings file from binary to text
-# word2vec = KeyedVectors.load_word2vec_format(os.path.join(EMB_DIR, "GoogleNews-vectors-negative300.bin"), binary=True)
-# word2vec.save_word2vec_format(os.path.join(EMB_DIR, "GoogleNews-vectors-negative300.txt"), binary=False)
-# sys.exit()
-
+EMB_DIR = './embed/'
 EMB_SIZE = 300
 max_length = 400
+
+# file of word embeddings to open
+if args.embeddings.lower() == "gs":
+	EMB_FILE = 'glove.6B.300d.txt'
+	GLOVE_EMB = True
+elif args.embeddings.lower() == "gb":
+	EMB_FILE = 'glove.840B.300d.txt'
+	GLOVE_EMB = True
+elif args.embeddings.lower() == "w2v":
+	EMB_FILE = 'GoogleNews-vectors-negative300.txt'
+	word2vec = KeyedVectors.load_word2vec_format(os.path.join(EMB_DIR, EMB_FILE), binary=False)
+	GLOVE_EMB = False
+else:
+	print("Wrong embeddings...")
+	sys.exit()
 
 if __name__ == '__main__': 
 
@@ -197,9 +202,9 @@ if __name__ == '__main__':
 	test_list = [record_tokenize(rec) for rec in test_list]
 
 	# getting the document lengths
-	y_train = [int(s["plength"]) for s in train_list]
-	y_val = [int(s["plength"]) for s in val_list]
-	y_test = [int(s["plength"]) for s in test_list]
+	y_train = array([int(s["plength"]) for s in train_list])
+	y_val = array([int(s["plength"]) for s in val_list])
+	y_test = array([int(s["plength"]) for s in test_list])
 
 	# putting title, abstract and keywords together
 	X_train = [x["keywords"] + " " + x["title"] + " " + x["abstract"] for x in train_list]
@@ -211,60 +216,65 @@ if __name__ == '__main__':
 	docs = X_train + X_val + X_test
 	t.fit_on_texts(docs)
 	vocab_size = len(t.word_index) + 1
+	# create a weight matrix for words in training docs
+	embedding_matrix = zeros((vocab_size, EMB_SIZE))
+	
 	# integer encode the documents
 	X_train = t.texts_to_sequences(X_train)
 	X_val = t.texts_to_sequences(X_val)
 	X_test = t.texts_to_sequences(X_test)
 
-	y_train = array(y_train)
-	y_val = array(y_val)
-	y_test = array(y_test)
-
-	# print(encoded_docs)
 	# pad documents to a max length of 4 words
 	X_train = pad_sequences(X_train, maxlen=max_length, padding='post', value=0)
 	X_val = pad_sequences(X_val, maxlen=max_length, padding='post', value=0)
 	X_test = pad_sequences(X_test, maxlen=max_length, padding='post', value=0)
-	# print(padded_docs)
 	
-	# # load the whole embedding into memory - uncomment before pushing
-	# embeddings_index = dict()
-	# f = open(os.path.join(EMB_DIR, EMB_FILE), encoding='utf-8')
-	# for line in f:
+	# functions to load the whole Glove or w2v embedding into memory
+	def load_glove():
+		embeddings_index = dict()
+		f = open(os.path.join(EMB_DIR, EMB_FILE), encoding='utf-8')
+		for line in tqdm(f, desc='reading embeddings'):
+			values = line.split()
+			word = values[0]
+			try:
+				coefs = asarray(values[1:], dtype='float32')
+			except:
+				continue
+			embeddings_index[word] = coefs
+		f.close()
+		print('Loaded %s word vectors.' % len(embeddings_index))
+		# create a weight matrix for words in training docs
+		for word, i in t.word_index.items():
+			embedding_vector = embeddings_index.get(word)
+			if embedding_vector is not None:
+				embedding_matrix[i] = embedding_vector
 
-	# 	# # skip the first line of GoogleNews embeddings file
-	# 	# if len(line) < 20:
-	# 	# 	continue
+	def load_w2v():
+		embeddings_index = dict()
+		f = open(os.path.join(EMB_DIR, EMB_FILE), encoding='utf-8')
+		for line in tqdm(f, desc='reading embeddings'):
+			# skip the header line of GoogleNews embeddings file
+			if len(line) < 20:
+				continue
+			values = line.split()
+			word = values[0]
+			try:
+				coefs = asarray(values[1:], dtype='float32')
+			except:
+				continue
+			embeddings_index[word] = coefs
+		f.close()
+		# create a weight matrix for words in training docs 
+		for word, i in t.word_index.items():
+			if word in word2vec.vocab:
+				embedding_matrix[i] = word2vec.word_vec(word)
 
-	# 	values = line.split()
-	# 	word = values[0]
-	# 	try:
-	# 		coefs = asarray(values[1:], dtype='float32')
-	# 	except:
-	# 		continue
-	# 	embeddings_index[word] = coefs
-	# f.close()
-	# print('Loaded %s word vectors.' % len(embeddings_index))
+	if GLOVE_EMB == True:
+		load_glove()
+	else:
+		load_w2v()
 
-	# # create a weight matrix for words in training docs - uncomment before pushing
-	# embedding_matrix = zeros((vocab_size, EMB_SIZE))
-	# for word, i in t.word_index.items():
-
-	# 	embedding_vector = embeddings_index.get(word)
-	# 	if embedding_vector is not None:
-	# 		embedding_matrix[i] = embedding_vector
-
-	# 	# if word in word2vec.vocab:
-	# 	# 	embedding_matrix[i] = word2vec.word_vec(word)
-
-	# # save embedding_matrix, num_words - remove befor pushing
-	# wemb_dict_m = open(os.path.join(EMB_DIR, "wmb_matr"), 'wb')
-	# pickle.dump([embedding_matrix, vocab_size], wemb_dict_m)
-
-	# loading embedding_matrix, num_words - remove befor pushing
-	wemb_dict_m = open(os.path.join(EMB_DIR, "wmb_matr"), 'rb')
-	embedding_matrix, vocab_size = pickle.load(wemb_dict_m)
-
+	# creating the neural network model
 	model = Sequential()
 	e = Embedding(vocab_size, EMB_SIZE, weights=[embedding_matrix], input_length=max_length, trainable=False)
 	model.add(e)
@@ -274,15 +284,11 @@ if __name__ == '__main__':
 
 	# compile the model
 	model.compile(optimizer='adam', loss='mse', metrics=['mse'])
-	# summarize the model
 	print(model.summary())
 
-	# fit the model
+	# fit the model and get predictions
 	model.fit(X_train, y_train, batch_size=32, epochs=5, 
 		validation_data=(X_val, y_val), verbose=1, shuffle=False)
-
-	# loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
-	# print('Accuracy: %f' % (accuracy*100))
 	y_pred = model.predict(X_test)
 
 	# Print MSE MAE R2 scores
