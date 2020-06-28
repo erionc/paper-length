@@ -6,17 +6,14 @@ from Glove and Word2Vec (you chose for each run) and a dense layer of
 100 neurons. 
 '''
 
-import pandas as pd
 import numpy as np
 from numpy import array, asarray, zeros
 from ast import literal_eval
-import os, sys, argparse, json, re, random, pickle
+import os, sys, argparse, json, re, random
 from nltk import word_tokenize, sent_tokenize
 from nltk.tokenize.treebank import TreebankWordTokenizer
 from tqdm import *
 
-from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer, CountVectorizer, HashingVectorizer
-from sklearn import linear_model
 from gensim.models import doc2vec
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, accuracy_score
 from gensim.models import KeyedVectors

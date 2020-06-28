@@ -2,28 +2,21 @@
 '''
 Experiments with keywords + title + abstract  metadata concatenated. The 
 regressor is a neural network with a static layer of 300d word embeddings 
-from Glove and Word2Vec and ...
+from Glove and Word2Vec (you chose for each run) and one layer from NgramCNN
+architecture with 3 convolution branches of kernel sizes 1, 2, 3.
 '''
 
-import pandas as pd
 import numpy as np
 from numpy import array, asarray, zeros
 from ast import literal_eval
 from tqdm import *
-
-import os, sys, argparse, json, re, random, pickle
+import os, sys, argparse, json, re, random
 from nltk import word_tokenize, sent_tokenize
 from nltk.tokenize.treebank import TreebankWordTokenizer
 
-from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer, CountVectorizer, HashingVectorizer
-from sklearn import linear_model
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.naive_bayes import GaussianNB
 from gensim.models import doc2vec
-# from collections import namedtuple
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, accuracy_score
 from gensim.models import KeyedVectors
-
 from sklearn.neural_network import MLPRegressor
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
@@ -175,8 +168,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-e', '--embeddings', choices=['gs', 'gb', 'w2v'], help='Embedding type', required=True)
 args = parser.parse_args()
 
-# EMB_DIR = './embed/'
-EMB_DIR = '/mnt/c/buffer/temp/'
+EMB_DIR = './embed/'
 EMB_SIZE = 300
 max_length = 400
 
