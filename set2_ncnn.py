@@ -2,13 +2,14 @@
 '''
 Experiments with keywords + title + abstract  metadata concatenated. The 
 regressor is a neural network with a static layer of 300d word embeddings 
-from Glove and Word2Vec and a dense layer of 100 neurons. 
+from Glove and Word2Vec and ...
 '''
 
 import pandas as pd
 import numpy as np
 from numpy import array, asarray, zeros
 from ast import literal_eval
+from tqdm import *
 
 import os, sys, argparse, json, re, random, pickle
 from nltk import word_tokenize, sent_tokenize
@@ -170,20 +171,29 @@ def text_to_wordlist(text, remove_stopwords=False, stem_words=False):
 	# Return a list of words
 	return(text)
 
+parser = argparse.ArgumentParser()
+parser.add_argument('-e', '--embeddings', choices=['gs', 'gb', 'w2v'], help='Embedding type', required=True)
+args = parser.parse_args()
+
 # EMB_DIR = './embed/'
 EMB_DIR = '/mnt/c/buffer/temp/'
-EMB_FILE = 'glove.6B.300d.txt' 
-# EMB_FILE = 'glove.840B.300d.txt'
-# EMB_FILE = 'GoogleNews-vectors-negative300.txt'
-# word2vec = KeyedVectors.load_word2vec_format(os.path.join(EMB_DIR, EMB_FILE), binary=False)
-
-## converting GoogleNews embeddings file from binary to text
-# word2vec = KeyedVectors.load_word2vec_format(os.path.join(EMB_DIR, "GoogleNews-vectors-negative300.bin"), binary=True)
-# word2vec.save_word2vec_format(os.path.join(EMB_DIR, "GoogleNews-vectors-negative300.txt"), binary=False)
-# sys.exit()
-
 EMB_SIZE = 300
 max_length = 400
+
+# file of word embeddings to open
+if args.embeddings.lower() == "gs":
+	EMB_FILE = 'glove.6B.300d.txt'
+	GLOVE_EMB = True
+elif args.embeddings.lower() == "gb":
+	EMB_FILE = 'glove.840B.300d.txt'
+	GLOVE_EMB = True
+elif args.embeddings.lower() == "w2v":
+	EMB_FILE = 'GoogleNews-vectors-negative300.txt'
+	word2vec = KeyedVectors.load_word2vec_format(os.path.join(EMB_DIR, EMB_FILE), binary=False)
+	GLOVE_EMB = False
+else:
+	print("Wrong embeddings...")
+	sys.exit()
 
 if __name__ == '__main__': 
 
@@ -198,9 +208,9 @@ if __name__ == '__main__':
 	test_list = [record_tokenize(rec) for rec in test_list]
 
 	# getting the document lengths
-	y_train = [int(s["plength"]) for s in train_list]
-	y_val = [int(s["plength"]) for s in val_list]
-	y_test = [int(s["plength"]) for s in test_list]
+	y_train = array([int(s["plength"]) for s in train_list])
+	y_val = array([int(s["plength"]) for s in val_list])
+	y_test = array([int(s["plength"]) for s in test_list])
 
 	# putting title, abstract and keywords together
 	X_train = [x["keywords"] + " " + x["title"] + " " + x["abstract"] for x in train_list]
@@ -212,59 +222,63 @@ if __name__ == '__main__':
 	docs = X_train + X_val + X_test
 	t.fit_on_texts(docs)
 	vocab_size = len(t.word_index) + 1
+	# create a weight matrix for words in training docs
+	embedding_matrix = zeros((vocab_size, EMB_SIZE))
+
 	# integer encode the documents
 	X_train = t.texts_to_sequences(X_train)
 	X_val = t.texts_to_sequences(X_val)
 	X_test = t.texts_to_sequences(X_test)
 
-	y_train = array(y_train)
-	y_val = array(y_val)
-	y_test = array(y_test)
-
-	# print(encoded_docs)
 	# pad documents to a max length of 4 words
 	X_train = pad_sequences(X_train, maxlen=max_length, padding='post', value=0)
 	X_val = pad_sequences(X_val, maxlen=max_length, padding='post', value=0)
 	X_test = pad_sequences(X_test, maxlen=max_length, padding='post', value=0)
-	# print(padded_docs)
-	
-	# load the whole embedding into memory - uncomment before pushing
-	embeddings_index = dict()
-	f = open(os.path.join(EMB_DIR, EMB_FILE), encoding='utf-8')
-	for line in f:
 
-		# # skip the first line of GoogleNews embeddings file
-		# if len(line) < 20:
-		# 	continue
+	# functions to load the whole Glove or w2v embedding into memory
+	def load_glove():
+		embeddings_index = dict()
+		f = open(os.path.join(EMB_DIR, EMB_FILE), encoding='utf-8')
+		for line in tqdm(f, desc='reading embeddings'):
+			values = line.split()
+			word = values[0]
+			try:
+				coefs = asarray(values[1:], dtype='float32')
+			except:
+				continue
+			embeddings_index[word] = coefs
+		f.close()
+		print('Loaded %s word vectors.' % len(embeddings_index))
+		# create a weight matrix for words in training docs
+		for word, i in t.word_index.items():
+			embedding_vector = embeddings_index.get(word)
+			if embedding_vector is not None:
+				embedding_matrix[i] = embedding_vector
 
-		values = line.split()
-		word = values[0]
-		try:
-			coefs = asarray(values[1:], dtype='float32')
-		except:
-			continue
-		embeddings_index[word] = coefs
-	f.close()
-	print('Loaded %s word vectors.' % len(embeddings_index))
+	def load_w2v():
+		embeddings_index = dict()
+		f = open(os.path.join(EMB_DIR, EMB_FILE), encoding='utf-8')
+		for line in tqdm(f, desc='reading embeddings'):
+			# skip the header line of GoogleNews embeddings file
+			if len(line) < 20:
+				continue
+			values = line.split()
+			word = values[0]
+			try:
+				coefs = asarray(values[1:], dtype='float32')
+			except:
+				continue
+			embeddings_index[word] = coefs
+		f.close()
+		# create a weight matrix for words in training docs 
+		for word, i in t.word_index.items():
+			if word in word2vec.vocab:
+				embedding_matrix[i] = word2vec.word_vec(word)
 
-	# create a weight matrix for words in training docs - uncomment before pushing
-	embedding_matrix = zeros((vocab_size, EMB_SIZE))
-	for word, i in t.word_index.items():
-
-		embedding_vector = embeddings_index.get(word)
-		if embedding_vector is not None:
-			embedding_matrix[i] = embedding_vector
-
-		# if word in word2vec.vocab:
-		# 	embedding_matrix[i] = word2vec.word_vec(word)
-
-	# # save embedding_matrix, num_words - remove befor pushing
-	# wemb_dict_m = open(os.path.join(EMB_DIR, "wmb_matr"), 'wb')
-	# pickle.dump([embedding_matrix, vocab_size], wemb_dict_m)
-
-	# # loading embedding_matrix, num_words - remove befor pushing
-	# wemb_dict_m = open(os.path.join(EMB_DIR, "wmb_matr"), 'rb')
-	# embedding_matrix, vocab_size = pickle.load(wemb_dict_m)
+	if GLOVE_EMB == True:
+		load_glove()
+	else:
+		load_w2v()
 
 	# train a 1D convnet with global maxpooling
 	sequence_input = Input(shape=(max_length,), dtype='int32')
@@ -272,51 +286,36 @@ if __name__ == '__main__':
 		input_length=max_length, trainable=False)
 	embedded_sequences = e(sequence_input)
 
+	# three convolution branches of 1, 2, 3 kernel sizes
 	x = Conv1D(filters=20, kernel_size=1, activation='relu', 
 		strides=1)(embedded_sequences)
 	x = GlobalMaxPooling1D()(x)
 	# x = MaxPooling1D(4)(x)
-	# x = Flatten()(x) # use this if using MaxPooling1D instead of GlobalMaxPooling1D
+	# x = Flatten()(x) # flatten if using MaxPooling1D instead of GlobalMaxPooling1D
 
 	y = Conv1D(filters=20, kernel_size=2, activation='relu', 
 		strides=1)(embedded_sequences)
 	y = GlobalMaxPooling1D()(y)
-	# y = MaxPooling1D(4)(y)
-	# y = Flatten()(y) # use this if using MaxPooling1D instead of GlobalMaxPooling1D
-
 	z = Conv1D(filters=20, kernel_size=3, activation='relu', 
 		strides=1)(embedded_sequences)
 	z = GlobalMaxPooling1D()(z)
-	# z = MaxPooling1D(4)(z)
-	# z = Flatten()(z) # use this if using MaxPooling1D instead of GlobalMaxPooling1D
 
-	# t = Conv1D(filters=20, kernel_size=4, activation='relu', 
-	# 	strides=1)(embedded_sequences)
-	# t = GlobalMaxPooling1D()(t)
-	# z = MaxPooling1D(4)(z)
-	# z = Flatten()(z) # use this if using MaxPooling1D instead of GlobalMaxPooling1D
-
+	# joining the branches together 
 	w = concatenate([x, y, z])
-
-	# x = Conv1D(filters=20, kernel_size=3, activation='relu', 
-	# 	strides=1)(x)
-	# x = MaxPooling1D(2)(x)
-	# x = GlobalMaxPooling1D()(x)
-	# x = Flatten()(x) # use this if using MaxPooling1D instead of GlobalMaxPooling1D
-	
+	# dense and output layers	
 	w = Dense(units=100, activation='relu')(w)
 	preds = Dense(1)(w)
 
+	# compile the model
 	model = Model(sequence_input, preds)
 	model.compile(optimizer='adam', loss='mse', metrics=['mse'])
 	print(model.summary())
 
+	# fit the model and get predictions
 	model.fit(X_train, y_train, batch_size=32, epochs=5,
-	          validation_data=(X_val, y_val), verbose=0, shuffle=False)
-
+	          validation_data=(X_val, y_val), shuffle=False)
 	y_pred = model.predict(X_test)
 
 	# Print MSE MAE R2 scores
 	print(f"Train: {len(y_train)} \t Val: {len(y_val)} Test: {len(y_test)}")
 	print(f"MSE: {mean_squared_error(y_test, y_pred):.4f} \t MAE: {mean_absolute_error(y_test, y_pred):.4f} \t R2: {r2_score(y_test, y_pred):.4f}")
-
