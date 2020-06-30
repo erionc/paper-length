@@ -6,20 +6,14 @@ An MLP regressor, a Linear Regressor and a Support Vector Regressor are used
 as paper length predictors.
 '''
 
-from __future__ import print_function
-import pandas as pd
 import numpy as np
 import os, sys, argparse, json, re
 from nltk import word_tokenize, sent_tokenize
 from nltk.tokenize.treebank import TreebankWordTokenizer
-
-from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer, CountVectorizer, HashingVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer, HashingVectorizer
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
-from collections import namedtuple
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, accuracy_score
-# from gensim.models import KeyedVectors
-
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import FeatureUnion, Pipeline
 
@@ -178,4 +172,3 @@ if __name__ == '__main__':
 	# Print MSE MAE R2 scores
 	print(f"Train: {len(y_train)} \t Val: {len(y_val)} \t Test: {len(y_test)}")
 	print(f"MSE: {mean_squared_error(y_test, y_pred):.4f} \t MAE: {mean_absolute_error(y_test, y_pred):.4f} \t R2: {r2_score(y_test, y_pred):.4f}")
-
