@@ -18,11 +18,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 from collections import namedtuple
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, accuracy_score
-from gensim.models import KeyedVectors
+# from gensim.models import KeyedVectors
 
 from sklearn.neural_network import MLPRegressor
-from sklearn.datasets import make_regression
-from sklearn.model_selection import train_test_split, PredefinedSplit, GridSearchCV
 from sklearn.pipeline import FeatureUnion, Pipeline
 
 # just lowercase and ascii encode
