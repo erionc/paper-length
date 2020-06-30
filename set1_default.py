@@ -24,7 +24,6 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split, PredefinedSplit, GridSearchCV
 from sklearn.pipeline import FeatureUnion, Pipeline
-from sklearn.ensemble import RandomForestRegressor
 
 # just lowercase and ascii encode
 def lower_key_string(text):
@@ -114,7 +113,7 @@ def write_dicts_to_file(file_path, line_list):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vectorizer', choices=['tfidf', 'count', 'hash', 'union'], help='Text Vectorizer', required=True)
-parser.add_argument('-r', '--regressor', choices=['MLP', 'LR', 'SVR'], help='Regression Model', required=True)
+parser.add_argument('-r', '--regressor', choices=['mlp', 'lr', 'svr'], help='Regression Model', required=True)
 args = parser.parse_args()
 
 if __name__ == '__main__': 
@@ -142,7 +141,7 @@ if __name__ == '__main__':
 	tfidf = TfidfVectorizer()
 	count = CountVectorizer()
 	hash = HashingVectorizer()
-	union = FeatureUnion([("tfidf", tfidf), ("bow", bow), ("hash", hash)])
+	union = FeatureUnion([("tfidf", tfidf), ("count", count), ("hash", hash)])
 	
 	# trying different regressors
 	mlp_model = MLPRegressor(random_state=7)
