@@ -1,7 +1,9 @@
 
 '''
 Experiments with title + abstract + keywords metadata concatenated and
-vectorized with Count and TfIdf vectorizer with their default parameters
+vectorized with TfIdf, Count, Hash vectorizers with their default parameters.
+An MLP regressor, a Linear Regressor and a Support Vector Regressor are used
+as paper length predictors.
 '''
 
 from __future__ import print_function
@@ -46,7 +48,8 @@ def summary_from_keywords(key_list):
 
 # function that tokenizes text same as Stanford CoreNLP
 def core_tokenize(text):
-	''' Takes a text string and returns tokenized string using NLTK word_tokenize 
+	''' 
+	Takes a text string and returns tokenized string using NLTK word_tokenize 
 	same as in Stanford CoreNLP. space, \n \t are lost. "" are replace by ``''
 	'''
 	# tokenize | _ ^ / ~ + = * that are not tokenized by word_tokenize
@@ -75,17 +78,15 @@ def core_tokenize(text):
 	text = ' '.join(tokens)
 	# remove double+ spaces
 	text = re.sub(r'\s{2,}', " ", text)
-
 	# lowercase
 	text = text.lower()
 	# remove special characters by performing encode-decode in ascii
 	text = text.encode('ascii', 'ignore').decode('ascii')
-
 	return text
 
-# tokenizes text in ["abstract", "title"] fields of a dictionary or dataframe record
+# tokenizes text in ["abstract", "title", "keywords"] fields
 def record_tokenize(rec):
-	''' Tokenizes ALL fields of a dictionary or dataframe record wich core_tokenize'''
+	''' Tokenizes ALL fields of a dictionary or dataframe record with core_tokenize'''
 	for k,v in rec.items():
 		if k in ["abstract", "title"]:
 			rec[k] = core_tokenize(v)
@@ -97,7 +98,7 @@ def record_tokenize(rec):
 # read file json lines from given file path and return them in a list
 def read_dicts_from_list(file_path):
 	'''read json lines and store them in a list that is returned'''
-	with open(file_path, "r", encoding = 'utf-8') as inf:   
+	with open(file_path, "r", encoding='utf-8') as inf:   
 		# strip \n at the end of each line
 		line_list = [json.loads(line) for line in inf]
 	return line_list
@@ -105,53 +106,16 @@ def read_dicts_from_list(file_path):
 # write list records as lines in a given file path
 def write_dicts_to_file(file_path, line_list):
 	'''write list lines in a file path that is opened'''
-	outf = open(file_path, "a", encoding = 'utf-8')  # in this case i need to append to file
+	outf = open(file_path, "a", encoding='utf-8')  
 	for itm in line_list:
 		json.dump(itm, outf)
 		outf.write('\n')
 	outf.close()
 
-def text_to_wordlist(text, remove_stopwords=False, stem_words=False):
-	# Clean the text, with the option to remove stopwords and to stem words.
-	
-	# Convert words to lower case and split them
-	text = text.lower().split()
-  
-	text = " ".join(text)
-
-	# # Clean the text
-	# text = re.sub(r"[^A-Za-z0-9^,!.\/'+-=]", " ", text)
-	# text = re.sub(r"what's", "what is ", text)
-	# text = re.sub(r"\'s", " ", text)
-	# text = re.sub(r"\'ve", " have ", text)
-	# text = re.sub(r"can't", "cannot ", text)
-	# text = re.sub(r"n't", " not ", text)
-	# text = re.sub(r"i'm", "i am ", text)
-	# text = re.sub(r"\'re", " are ", text)
-	# text = re.sub(r"\'d", " would ", text)
-	# text = re.sub(r"\'ll", " will ", text)
-	# text = re.sub(r",", " ", text)
-	# text = re.sub(r"\.", " ", text)
-	# text = re.sub(r"!", " ! ", text)
-	# text = re.sub(r"\/", " ", text)
-	# text = re.sub(r"\^", " ^ ", text)
-	# text = re.sub(r"\+", " + ", text)
-	# text = re.sub(r"\-", " - ", text)
-	# text = re.sub(r"\=", " = ", text)
-	# text = re.sub(r"'", " ", text)
-	# text = re.sub(r"(\d+)(k)", r"\g<1>000", text)
-	# text = re.sub(r":", " : ", text)
-	# text = re.sub(r" e g ", " eg ", text)
-	# text = re.sub(r" b g ", " bg ", text)
-	# text = re.sub(r" u s ", " american ", text)
-	# text = re.sub(r"\0s", "0", text)
-	# text = re.sub(r" 9 11 ", "911", text)
-	# text = re.sub(r"e - mail", "email", text)
-	# text = re.sub(r"j k", "jk", text)
-	# text = re.sub(r"\s{2,}", " ", text)
-	
-	# Return a list of words
-	return(text)
+parser = argparse.ArgumentParser()
+parser.add_argument('-v', '--vectorizer', choices=['tfidf', 'count', 'hash', 'union'], help='Text Vectorizer', required=True)
+parser.add_argument('-r', '--regressor', choices=['MLP', 'LR', 'SVR'], help='Regression Model', required=True)
+args = parser.parse_args()
 
 if __name__ == '__main__': 
 
@@ -176,19 +140,38 @@ if __name__ == '__main__':
 
 	# trying different vectorizers
 	tfidf = TfidfVectorizer()
-	bow = CountVectorizer()
+	count = CountVectorizer()
 	hash = HashingVectorizer()
-	comb = FeatureUnion([("tfidf", tfidf), ("bow", bow), ("hash", hash)])
+	union = FeatureUnion([("tfidf", tfidf), ("bow", bow), ("hash", hash)])
 	
 	# trying different regressors
 	mlp_model = MLPRegressor(random_state=7)
 	lr_model = LinearRegression()
 	svr_model = SVR()
 
-	# select the vectorizer for each run
-	vect = tfidf
-	# select the model for each run
-	model = svr_model
+	# selecting the vectorizer 
+	if args.vectorizer.lower() == "tfidf":
+		vect = tfidf
+	elif args.vectorizer.lower() == "count":
+		vect = count
+	elif args.vectorizer.lower() == "hash":
+		vect = hash
+	elif args.vectorizer.lower() == "union":
+		vect = union
+	else:
+		print("Wrong vectorizer...")
+		sys.exit()
+
+	# selecting the regressor
+	if args.regressor.lower() == "mlp":
+		model = mlp_model
+	elif args.regressor.lower() == "lr":
+		model = lr_model
+	elif args.regressor.lower() == "svr":
+		model = svr_model
+	else:
+		print("Wrong Regressor...")
+		sys.exit()
 
 	# create and fit the pipeline
 	pipe_model = Pipeline([("vect", vect), ("model", model)])

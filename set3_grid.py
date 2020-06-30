@@ -251,10 +251,10 @@ if __name__ == '__main__':
 	'reg__criterion': ['friedman_mse', 'mse', 'mae'], 'reg__max_features': ['auto', 'sqrt', 'log2'],
 	'reg__max_depth': [2, 3, 4]}
 
-	# parameters for gradient boosting regressor - second round - 36
-	gb_grid2 = {'reg__n_estimators': [30, 40, 50, 60],
+	# parameters for gradient boosting regressor - second round - 60
+	gb_grid2 = {'reg__n_estimators': [40, 50, 60, 70, 80],
 	'reg__max_features': ['auto', 'sqrt', 'log2'],
-	'reg__max_depth': [2, 3, 4]}
+	'reg__max_depth': [3, 4, 5, 6]}
 
 	# parameters for xg boosting regressor - 360
 	xg_grid = {'reg__n_estimators': [50, 75, 100, 125, 150, 200], 'reg__gamma': [0, 0.01, 0.1], 
@@ -277,9 +277,9 @@ if __name__ == '__main__':
 	xg_model = xgb.XGBRegressor(random_state=7)
 
 	# select one model to try 
-	model = mlp_model
+	model = gb_model
 	# select the parameter grid of the model to try 
-	model_grid = mlp_grid2 
+	model_grid = gb_grid2 
 
 	# creating pgrid joining vect_grid with model_grid
 	pgrid = {**vect_grid2, **model_grid}
