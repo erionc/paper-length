@@ -7,7 +7,6 @@ Regressor, a Random Forest, a Gradient Boosgin and and Extreme Gradient
 Boosgin regressor are used as paper length predictors. 
 '''
 
-from __future__ import print_function
 import pandas as pd
 import numpy as np
 import os, sys, argparse, json, re
@@ -18,21 +17,16 @@ stopWords = set(stopwords.words('english'))
 
 from sklearn.feature_extraction.text import TfidfTransformer, TfidfVectorizer, CountVectorizer, HashingVectorizer
 from sklearn.linear_model import LinearRegression
-from sklearn.feature_extraction import DictVectorizer
 from sklearn.svm import SVR
-from collections import namedtuple
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, accuracy_score
-from gensim.models import KeyedVectors
-from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 from sklearn.neural_network import MLPRegressor
-from sklearn.datasets import make_regression
-from sklearn.model_selection import train_test_split, GridSearchCV 
+from sklearn.model_selection import GridSearchCV 
 from sklearn.pipeline import FeatureUnion, Pipeline
-from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 import xgboost as xgb
-from sklearn.compose import ColumnTransformer, TransformedTargetRegressor, make_column_transformer
-from sklearn.preprocessing import MinMaxScaler, MaxAbsScaler, PowerTransformer, StandardScaler, RobustScaler
+from sklearn.compose import ColumnTransformer, make_column_transformer
+from sklearn.preprocessing import MinMaxScaler, MaxAbsScaler
 
 # just lowercase and ascii encode
 def lower_key_string(text):
@@ -121,9 +115,9 @@ def write_dicts_to_file(file_path, line_list):
 	outf.close()
 
 # read the data
-train_lst = read_dicts_from_lst(os.path.join("data", "train.txt"))
-val_lst = read_dicts_from_lst(os.path.join("data", "val.txt"))
-test_lst = read_dicts_from_lst(os.path.join("data", "test.txt"))
+train_lst = read_dicts_from_list(os.path.join("data", "train.txt"))
+val_lst = read_dicts_from_list(os.path.join("data", "val.txt"))
+test_lst = read_dicts_from_list(os.path.join("data", "test.txt"))
 full_sample_lst = train_lst + val_lst + test_lst
 
 # tokenize, lowercase and convert list of keywords to string
@@ -144,6 +138,10 @@ cit_lst = [int(x["n_citation"]) for x in full_sample_lst]
 # # putting all features together
 X = pd.DataFrame({"keywords": key_lst, "title": title_lst, "abstract": abst_lst, 
 	"venue": venue_lst, "year": year_lst, "citations": cit_lst}) 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-r', '--regressor', choices=['mlp', 'lr', 'svr', 'rf', 'gb', 'xgb'], help='Regression Model', required=True)
+args = parser.parse_args()
 
 if __name__ == '__main__': 
 
@@ -195,22 +193,40 @@ if __name__ == '__main__':
 	# parameters for xg boosting regressor
 	xgb_grid = {
 	'reg__n_estimators': [50, 60, 70, 85, 100, 150, 200], 
-	'reg__eta': [0.008, 0.015, 0.03 0.05, 0.1, 0.15, 0.3],
+	'reg__eta': [0.008, 0.015, 0.03, 0.05, 0.1, 0.15, 0.3],
 	'reg__gamma': [0.002, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2], 
 	'reg__max_depth': [2, 3, 4, 5, 6, 7, 8]}
 
 	# creating different regressors
-	lr_model = LinearRegression()
 	svr_model = SVR()
+	lr_model = LinearRegression()
 	mlp_model = MLPRegressor(random_state=7)
 	rf_model = RandomForestRegressor(random_state=7, n_jobs=-1)
 	gb_model = GradientBoostingRegressor(random_state=7)
 	xgb_model = xgb.XGBRegressor(random_state=7)
 
-	# select one model to try 
-	model = lr_model
-	# select the parameter grid of the model to try 
-	model_grid = lr_grid 
+	# selecting the regression model and the respective param grid
+	if args.regressor.lower() == "mlp":
+		model = mlp_model
+		model_grid = mlp_grid 
+	elif args.regressor.lower() == "lr":
+		model = lr_model
+		model_grid = lr_grid 
+	elif args.regressor.lower() == "svr":
+		model = svr_model
+		model_grid = svr_grid 
+	elif args.regressor.lower() == "rf":
+		model = rf_model
+		model_grid = rf_grid 
+	elif args.regressor.lower() == "gb":
+		model = gb_model
+		model_grid = gb_grid 
+	elif args.regressor.lower() == "xgb":
+		model = xgb_model
+		model_grid = xgb_grid 
+	else:
+		print("Wrong Regressor...")
+		sys.exit()
 
 	# creating pgrid joining vect_grid with model_grid
 	pgrid = {**vect_grid, **model_grid}
