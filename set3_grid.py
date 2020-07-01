@@ -153,82 +153,59 @@ if __name__ == '__main__':
 	y_train = y[:4000] ; y_test = y[4000:5000]
 	X_train = X[:4000] ; X_test = X[4000:5000]
 
-	# parameters of the vectorizer - 72
+	# parameters of the vectorizer
 	vect_grid = {
-	'union__abstract__ngram_range': [(1, 1), (1,2), (1,3)], 
+	'union__abstract__ngram_range': [(1, 1), (1,2), (1,3)],
+	'union__abstract__norm': ['l1', 'l2', None], 
+	'union__abstract__smooth_idf': [True, False], 
 	'union__abstract__stop_words': [stopWords, None], 
-	'union__abstract__norm': ['l1', 'l2', None], 'union__abstract__smooth_idf': [True, False],
-	'union__abstract__sublinear_tf': [True, False]
-	}
+	'union__abstract__sublinear_tf': [True, False]}
 
-	# parameters of the vectorizer - second round - 24
-	vect_grid2 = {
-	'union__abstract__ngram_range': [(1,2), (1,3)], 
-	# 'union__abstract__stop_words': [stopWords, None], 
-	# 'union__abstract__norm': ['l1', 'l2', None], 
-	# 'union__abstract__smooth_idf': [True, False],
-	# 'union__abstract__sublinear_tf': [True, False]
-	}
+	# parameters for linear regression
+	lr_grid = {
+	'reg__copy_X': [True, False],
+	'reg__fit_intercept': [True, False], 
+	'reg__normalize': [True, False]}
 
-	# parameters for linear regression - 8
-	lr_grid = {'reg__fit_intercept': [True, False], 'reg__normalize': [True, False],
-	'reg__copy_X': [True, False]}
-
-	# parameters for support vector regression - 80
-	svr_grid = {'reg__kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
-	'reg__gamma': ['scale', 'auto'], 'reg__C': [0.01, 0.1, 1, 10, 100],
+	# parameters for support vector regression 
+	svr_grid = {
+	'reg__C': [0.01, 0.1, 1, 10, 100],
+	'reg__gamma': ['scale', 'auto'], 
+	'reg__kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
 	'reg__shrinking': [True, False]}
 
-	# parameters for multilayer perceptron regressor - 25
-	mlp_grid = {'reg__hidden_layer_sizes': [(50, ), (75, ), (100, ), (125, ), (150, )],
+	# parameters for multilayer perceptron regressor 
+	mlp_grid = {
+	'reg__hidden_layer_sizes': [(50, ), (75, ), (100, ), (125, ), (150, )],
 	'reg__alpha': [0.00005, 0.0001, 0.0005, 0.001, 0.005],
 	'solver': ['lbfgs', 'sgd', 'adam']}
 
-	# parameters for multilayer perceptron regressor - 9
-	mlp_grid2 = {'reg__hidden_layer_sizes': [(50, ), (75, ), (100, )],
-	'reg__alpha': [0.00005, 0.0001, 0.0005],
-	# 'solver': ['lbfgs', 'sgd', 'adam']
-	}
+	# parameters for random forest regressor
+	rf_grid = {
+	'reg__n_estimators': [50, 60, 70, 85, 100, 150, 200],
+	'reg__max_features': ["auto", "sqrt", "log2"], 
+	'reg__bootstrap': [True, False], 'reg__oob_score': [True, False]}
 
-	# parameters for random forest regressor - 72
-	rfr_grid = {'reg__n_estimators': [50, 75, 100, 125, 150, 200],
-	'reg__max_features': ["auto", "sqrt", "log2"], 'reg__bootstrap': [True, False],
-	'reg__oob_score': [True, False]}
-
-	# parameters for random forest regressor - second round - 48
-	rfr_grid2 = {'reg__n_estimators': [30, 40, 50, 60],
-	'reg__max_features': ["auto", "sqrt", "log2"], 'reg__bootstrap': [True, False],
-	'reg__oob_score': [True, False]}
-
-	# parameters for gradient boosting regressor - 162
-	gb_grid = {'reg__n_estimators': [50, 75, 100, 125, 150, 200],
-	'reg__criterion': ['friedman_mse', 'mse', 'mae'], 'reg__max_features': ['auto', 'sqrt', 'log2'],
-	'reg__max_depth': [2, 3, 4]}
-
-	# parameters for gradient boosting regressor - second round - 60
-	gb_grid2 = {'reg__n_estimators': [40, 50, 60, 70, 80],
+	# parameters for gradient boosting regressor
+	gb_grid = {
+	'reg__n_estimators': [50, 60, 70, 85, 100, 150, 200],
 	'reg__max_features': ['auto', 'sqrt', 'log2'],
-	'reg__max_depth': [3, 4, 5, 6]}
+	'reg__max_depth': [2, 3, 4, 5, 6, 7, 8]}
 
-	# parameters for xg boosting regressor - 360
-	xg_grid = {'reg__n_estimators': [50, 75, 100, 125, 150, 200], 'reg__gamma': [0, 0.01, 0.1], 
-	'reg__eta': [0.1, 0.2, 0.3, 0.4], 'reg__max_depth': [4, 5, 6, 7, 8]}
+	# parameters for xg boosting regressor
+	xgb_grid = {
+	'reg__n_estimators': [50, 60, 70, 85, 100, 150, 200], 
+	'reg__eta': [0.008, 0.015, 0.03 0.05, 0.1, 0.15, 0.3],
+	'reg__gamma': [0.002, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2], 
+	'reg__max_depth': [2, 3, 4, 5, 6, 7, 8]}
 
-	# parameters for xg boosting regressor - new - 108
-	xg_grid2 = {'reg__n_estimators': [40, 50, 60], 'reg__gamma': [0.005, 0.01, 0.05], 
-	'reg__eta': [0.05, 0.1, 0.15], 'reg__max_depth': [2, 3, 4, 5]}
-
-	# parameters for xg boosting regressor - trial 3 - 192
-	xg_grid3 = {'reg__n_estimators': [45, 50, 55, 60], 'reg__gamma': [0.002, 0.005, 0.007, 0.01], 
-	'reg__eta': [0.03, 0.05, 0.07, 0.1], 'reg__max_depth': [2, 3, 4]}
-
-	# trying different regressors
+	# creating different regressors
 	lr_model = LinearRegression()
 	svr_model = SVR()
 	mlp_model = MLPRegressor(random_state=7)
-	rfr_model = RandomForestRegressor(random_state=7, n_jobs=-1)
+	rf_model = RandomForestRegressor(random_state=7, n_jobs=-1)
 	gb_model = GradientBoostingRegressor(random_state=7)
-	xg_model = xgb.XGBRegressor(random_state=7)
+	xgb_model = xgb.XGBRegressor(random_state=7)
 
 	# select one model to try 
 	model = lr_model
@@ -236,7 +213,7 @@ if __name__ == '__main__':
 	model_grid = lr_grid 
 
 	# creating pgrid joining vect_grid with model_grid
-	pgrid = {**vect_grid2, **model_grid}
+	pgrid = {**vect_grid, **model_grid}
 
 	# the vectorizer and model pipeline
 	pipe_model = Pipeline([
