@@ -1,8 +1,10 @@
 
-
 '''
-Experiments with title + abstract + keywords metadata concatenated and
-vectorized with Count and TfIdf vectorizer with their default parameters
+Experiments with title, abstract, keywords, venue text fields independently
+vectorized using TfIdf and publication year and number of citations joined as
+numeric features. An MLP, a Linear Regressor, a Support Vector 
+Regressor, a Random Forest, a Gradient Boosgin and and Extreme Gradient
+Boosgin regressor are used as paper length predictors. 
 '''
 
 from __future__ import print_function
@@ -25,7 +27,7 @@ from sklearn.impute import SimpleImputer
 
 from sklearn.neural_network import MLPRegressor
 from sklearn.datasets import make_regression
-from sklearn.model_selection import train_test_split, PredefinedSplit, GridSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV 
 from sklearn.pipeline import FeatureUnion, Pipeline
 from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, GradientBoostingRegressor
 import xgboost as xgb
@@ -41,9 +43,9 @@ def lower_key_string(text):
 	return text
 
 # takes list of unique keywords and returns keyword summary string
-def summary_from_keywords(key_lst):
+def summary_from_keywords(key_list):
 	# remove any empty strings
-	keys = [x for x in key_lst if len(x) >= 1]
+	keys = [x for x in key_list if len(x) >= 1]
 	# remove trailing spaces
 	keys = [x.strip() for x in keys] 
 	# remove duplicate keywords
@@ -54,7 +56,8 @@ def summary_from_keywords(key_lst):
 
 # function that tokenizes text same as Stanford CoreNLP
 def core_tokenize(text):
-	''' Takes a text string and returns tokenized string using NLTK word_tokenize 
+	''' 
+	Takes a text string and returns tokenized string using NLTK word_tokenize 
 	same as in Stanford CoreNLP. space, \n \t are lost. "" are replace by ``''
 	'''
 	# tokenize | _ ^ / ~ + = * that are not tokenized by word_tokenize
@@ -83,19 +86,17 @@ def core_tokenize(text):
 	text = ' '.join(tokens)
 	# remove double+ spaces
 	text = re.sub(r'\s{2,}', " ", text)
-
 	# lowercase
 	text = text.lower()
 	# remove special characters by performing encode-decode in ascii
 	text = text.encode('ascii', 'ignore').decode('ascii')
-
 	return text
 
-# tokenizes text in ["abstract", "title"] fields of a dictionary or dataframe record
+# tokenizes text in ["abstract", "title", "keywords"] fields
 def record_tokenize(rec):
-	''' Tokenizes ALL fields of a dictionary or dataframe record wich core_tokenize'''
+	''' Tokenizes ALL fields of a dictionary or dataframe record with core_tokenize'''
 	for k,v in rec.items():
-		if k in ["abstract", "title", "venue"]:
+		if k in ["abstract", "title"]:
 			rec[k] = core_tokenize(v)
 		elif k == "keywords":
 			key_str = summary_from_keywords(v)
@@ -103,68 +104,21 @@ def record_tokenize(rec):
 	return rec
 
 # read file json lines from given file path and return them in a list
-def read_dicts_from_lst(file_path):
+def read_dicts_from_list(file_path):
 	'''read json lines and store them in a list that is returned'''
-	with open(file_path, "r", encoding = 'utf-8') as inf:   
+	with open(file_path, "r", encoding='utf-8') as inf:   
 		# strip \n at the end of each line
-		line_lst = [json.loads(line) for line in inf]
-	return line_lst
+		line_list = [json.loads(line) for line in inf]
+	return line_list
 
 # write list records as lines in a given file path
-def write_dicts_to_file(file_path, line_lst):
+def write_dicts_to_file(file_path, line_list):
 	'''write list lines in a file path that is opened'''
-	outf = open(file_path, "a", encoding = 'utf-8')  # in this case i need to append to file
-	for itm in line_lst:
+	outf = open(file_path, "a", encoding='utf-8')  
+	for itm in line_list:
 		json.dump(itm, outf)
 		outf.write('\n')
 	outf.close()
-
-def text_to_wordlist(text, remove_stopwords=False, stem_words=False):
-	# Clean the text, with the option to remove stopwords and to stem words.
-	
-	# Convert words to lower case and split them
-	text = text.lower().split()
-  
-	text = " ".join(text)
-
-	# # Clean the text
-	# text = re.sub(r"[^A-Za-z0-9^,!.\/'+-=]", " ", text)
-	# text = re.sub(r"what's", "what is ", text)
-	# text = re.sub(r"\'s", " ", text)
-	# text = re.sub(r"\'ve", " have ", text)
-	# text = re.sub(r"can't", "cannot ", text)
-	# text = re.sub(r"n't", " not ", text)
-	# text = re.sub(r"i'm", "i am ", text)
-	# text = re.sub(r"\'re", " are ", text)
-	# text = re.sub(r"\'d", " would ", text)
-	# text = re.sub(r"\'ll", " will ", text)
-	# text = re.sub(r",", " ", text)
-	# text = re.sub(r"\.", " ", text)
-	# text = re.sub(r"!", " ! ", text)
-	# text = re.sub(r"\/", " ", text)
-	# text = re.sub(r"\^", " ^ ", text)
-	# text = re.sub(r"\+", " + ", text)
-	# text = re.sub(r"\-", " - ", text)
-	# text = re.sub(r"\=", " = ", text)
-	# text = re.sub(r"'", " ", text)
-	# text = re.sub(r"(\d+)(k)", r"\g<1>000", text)
-	# text = re.sub(r":", " : ", text)
-	# text = re.sub(r" e g ", " eg ", text)
-	# text = re.sub(r" b g ", " bg ", text)
-	# text = re.sub(r" u s ", " american ", text)
-	# text = re.sub(r"\0s", "0", text)
-	# text = re.sub(r" 9 11 ", "911", text)
-	# text = re.sub(r"e - mail", "email", text)
-	# text = re.sub(r"j k", "jk", text)
-	# text = re.sub(r"\s{2,}", " ", text)
-	
-	# Return a list of words
-	return(text)
-
-# return the average characters in each word of text
-def avg_word(text):
-	words = text.split()
-	return (sum(len(word) for word in words) / len(words))
 
 # read the data
 train_lst = read_dicts_from_lst(os.path.join("data", "train.txt"))
@@ -189,7 +143,7 @@ cit_lst = [int(x["n_citation"]) for x in full_sample_lst]
 
 # # putting all features together
 X = pd.DataFrame({"keywords": key_lst, "title": title_lst, "abstract": abst_lst, 
-	"venue": venue_lst, "year": year_lst, "citations": cit_lst}) #, "num_keys": num_keys_lst, "title_words": title_words_lst, "abst_words": abst_words_lst})
+	"venue": venue_lst, "year": year_lst, "citations": cit_lst}) 
 
 if __name__ == '__main__': 
 
@@ -211,9 +165,9 @@ if __name__ == '__main__':
 	vect_grid2 = {
 	'union__abstract__ngram_range': [(1,2), (1,3)], 
 	# 'union__abstract__stop_words': [stopWords, None], 
-	'union__abstract__norm': ['l1', 'l2', None], 
-	'union__abstract__smooth_idf': [True, False],
-	'union__abstract__sublinear_tf': [True, False]
+	# 'union__abstract__norm': ['l1', 'l2', None], 
+	# 'union__abstract__smooth_idf': [True, False],
+	# 'union__abstract__sublinear_tf': [True, False]
 	}
 
 	# parameters for linear regression - 8
@@ -277,9 +231,9 @@ if __name__ == '__main__':
 	xg_model = xgb.XGBRegressor(random_state=7)
 
 	# select one model to try 
-	model = gb_model
+	model = lr_model
 	# select the parameter grid of the model to try 
-	model_grid = gb_grid2 
+	model_grid = lr_grid 
 
 	# creating pgrid joining vect_grid with model_grid
 	pgrid = {**vect_grid2, **model_grid}
@@ -299,7 +253,7 @@ if __name__ == '__main__':
 	# get the predictions from the default model
 	y_pred_model = pipe_model.predict(X_test)
 
-	gs = GridSearchCV(estimator=pipe_model, param_grid=pgrid, cv=4, n_jobs=-1)
+	gs = GridSearchCV(estimator=pipe_model, param_grid=pgrid, cv=4, n_jobs=-1, pre_dispatch=16, verbose=1)
 	grid_result = gs.fit(X_train, y_train)
 	best_model = grid_result.best_estimator_
 	# get the predictions from the best model
