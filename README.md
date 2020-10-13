@@ -1,5 +1,5 @@
 # Paper Length Prediction
-Paper length prediction task conceived as a regression problem. This is the code for the paper: \
+Paper length prediction task conceived as a regression problem. This is the code for the paper: 
 
 [How Many Pages? Paper Length Prediction from the Metadata](https://arxiv.org/pdf/20.pdf) (NLPIR 2020) \
 Erion Çano, Ondřej Bojar
@@ -25,16 +25,16 @@ Please download [OAGL dataset](http://hdl.handle.net/11234/1-3257) to reproduce 
 ```
 python set1_default.py --vectorizer VECT --regressor REG 
 ```
-The VECT can be one of: *tfidf*, **count**, *hash*, *union*. The REG can be one of: *mlp*, *lr*, *svr*.
+The VECT can be one of: *tfidf*, *count*, *hash*, *union*. The REG can be one of: *mlp*, *lr*, *svr*.
 
-**To observe scores of a simple neural network with Glove small, Glove big and Word2vec embeddings:**
+**To observe scores of a neural network with Glove small, Glove big and Word2vec:**
 
 ```
 python set2_dense.py --embeddings EMB
 ```
 EMB can be one of: *gs*, *gb*, *w2v*.
 
-**To observe scores of NgramCNN architecture with Glove small, Glove big and Word2vec embeddings:**
+**To observe scores of NgramCNN with Glove small, Glove big and Word2vec:**
 
 ```
 python set2_ncnn.py --embeddings EMB
