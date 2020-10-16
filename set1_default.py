@@ -1,9 +1,12 @@
 
 '''
-Experiments with title + abstract + keywords metadata concatenated and
-vectorized with TfIdf, Count, Hash vectorizers with their default parameters.
-An MLP regressor, a Linear Regressor and a Support Vector Regressor are used
-as paper length predictors.
+Auth:	Erion Çano
+Desc:	Experiments with title + abstract + keywords metadata concatenated 
+        and vectorized with TfIdf, Count, Hash, and Union vectorizers with 
+        their default parameters. An MLP regressor (mlp), a Linear Regressor
+        (lr) and a Support Vector Regressor are used as length predictors.
+Lang: 	Python 3.6.9
+Use:	python set1_default.py --vectorizer VECT --regressor REG 
 '''
 
 import numpy as np
