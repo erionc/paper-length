@@ -1,9 +1,13 @@
 
 '''
-Experiments with keywords + title + abstract  metadata concatenated. The 
-regressor is a neural network with a static layer of 300d word embeddings 
-from Glove and Word2Vec (you chose for each run) and one layer from NgramCNN
-architecture with 3 convolution branches of kernel sizes 1, 2, 3.
+Author:	Erion Çano
+Descri:	Experiments with keywords + title + abstract metadata concatenated.
+        The regressor is a neural network with a static layer of 300d word 
+        embeddings from Glove and Word2Vec (you chose for each run) and one 
+        layer from NgramCNN architecture with 3 convolution branches of 
+        kernel sizes 1, 2, 3.
+Langu: 	Python 3.6.9
+Usage:	python set2_ncnn.py --embeddings EMB
 '''
 
 import numpy as np

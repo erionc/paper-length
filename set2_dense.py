@@ -1,9 +1,12 @@
 
 '''
-Experiments with keywords + title + abstract metadata concatenated. The 
-regressor is a neural network with a static layer of 300d word embeddings 
-from Glove and Word2Vec (you chose for each run) and a dense layer of 
-100 neurons. 
+Author:	Erion Çano
+Descri:	Experiments with keywords + title + abstract metadata concatenated.
+        The regressor is a neural network with a static layer of 300d word 
+        embeddings from Glove and Word2Vec (you chose for each run) and a 
+        dense layer of 100 neurons.
+Langu: 	Python 3.6.9
+Usage:	python set2_dense.py --embeddings EMB
 '''
 
 import numpy as np
