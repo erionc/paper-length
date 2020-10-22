@@ -1,10 +1,14 @@
 
 '''
-Experiments with title, abstract, keywords, venue text fields independently
-vectorized using TfIdf and publication year and number of citations joined as
-numeric features. An MLP, a Linear Regressor, a Support Vector 
-Regressor, a Random Forest, a Gradient Boosgin and and Extreme Gradient
-Boosgin regressor are used as paper length predictors. 
+Author:	Erion Çano
+Descri:	Experiments with title, abstract, keywords, venue text fields 
+        independently vectorized using TfIdf and publication year and 
+        number of citations joined as numeric features. An MLP, a Linear 
+        Regressor, a Support Vector Regressor, a Random Forest, a Gradient 
+        Boosting and and Extreme Gradient Boosting regressor are used as 
+        paper length predictors.
+Langu: 	Python 3.6.9
+Usage:	python set3_grid.py --regressor REG
 '''
 
 import pandas as pd
