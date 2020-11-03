@@ -1,7 +1,7 @@
 # Paper Length Prediction
 Paper length prediction task conceived as a regression problem. This is the code for the paper: 
 
-[How Many Pages? Paper Length Prediction from the Metadata](https://arxiv.org/pdf/20.pdf) (NLPIR 2020) \
+[How Many Pages? Paper Length Prediction from the Metadata](http://arxiv.org/abs/2010.15924) (NLPIR 2020) \
 Erion Çano, Ondřej Bojar
 
 ## Overview
