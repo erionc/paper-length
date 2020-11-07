@@ -20,6 +20,8 @@ The code is written and tested with the following libraries:
 
 Please download [OAGL dataset](http://hdl.handle.net/11234/1-3257) to reproduce the experiments. You should copy its *train.txt*, *test.txt*, and *val.txt* files inside the *data* folder of this repository. You also need to download the Glove word embeddings from [here](https://nlp.stanford.edu/projects/glove/) and copy *glove.6B.300d.txt* and *glove.840B.300d.txt* inside the *embed* folder of this repository. The Google News word embeddings can be downloaded from [here](https://code.google.com/archive/p/word2vec) and should be converted from binary to text format. Please refer to [this post](https://stackoverflow.com/questions/27324292/convert-word2vec-bin-file-to-text) to do that. 
 
+## Experiments
+
 **To observe scores of methods with their default parameters:**
 
 ```
