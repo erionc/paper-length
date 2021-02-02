@@ -6,7 +6,7 @@ Erion Çano, Ondřej Bojar
 
 ## Overview
 
-There are several latent correlations between the length of a document and its publication metadata. Understanding those correlations could be useful for for meta-research and important for optimizing various information retrieval tasks. We conceived the paper length prediction task as a regression learning problem and use this code and OAGL datset we created and released to observe how well this task can be solved with existing machine learning algorithms. 
+There are several latent correlations between the length of a document and its publication metadata. Understanding those correlations could be useful for for meta-research and important for optimizing several information retrieval tasks. We conceived the paper length prediction task as a regression learning problem and use this code and OAGL datset we created and released to observe how well this task can be solved with existing machine learning algorithms. 
 
 ## Dependencies
 
