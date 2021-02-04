@@ -50,6 +50,14 @@ python set3_grid.py --regressor REG
 ```
 REG can be one of: *mlp*, *lr*, *svr*, *rf*, *gb*, *xgb*. 
 
+## Citation
+
+**If using this code or OAGL dataset please cite the following paper:**
+
+Çano Erion, Bojar Ondřej: How Many Pages? Paper Length Prediction from the Metadata.
+NLPIR 2020, Proceedings of the the 4th International Conference on Natural Language
+Processing and Information Retrieval, Seoul, Korea, December 2020.
+
 
 
 
