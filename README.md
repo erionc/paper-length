@@ -67,7 +67,6 @@ publisher = {Association for Computing Machinery}, \
 address = {New York, NY, USA}, \
 url = {https://doi.org/10.1145/3443279.3443305}, \
 doi = {10.1145/3443279.3443305}, \
-abstract = {Being able to predict the length of a scientific paper may be helpful in numerous situations. This work defines the paper length prediction task as a regression problem and reports several experimental results using popular machine learning models. We also create a huge dataset of publication metadata and the respective lengths in number of pages. The dataset will be freely available and is intended to foster research in this domain. As future work, we would like to explore more advanced regressors based on neural networks and big pretrained language models.}, \
 booktitle = {Proceedings of the 4th International Conference on Natural Language Processing and Information Retrieval}, \
 pages = {91–95}, \
 numpages = {5}, \
